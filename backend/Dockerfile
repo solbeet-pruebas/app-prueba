@@ -20,7 +20,8 @@ RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --no-create-home app
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
-COPY alembic.ini ./
+# pyproject.toml: /api/version lee de ahí la versión de la app.
+COPY pyproject.toml alembic.ini ./
 COPY migrations ./migrations
 COPY app ./app
 ENV PATH="/app/.venv/bin:$PATH" \
