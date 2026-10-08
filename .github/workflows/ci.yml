@@ -1,0 +1,28 @@
+# CI del proyecto. La lógica vive en el workflow reutilizable de la fábrica
+# (solbeet/workflows); acá solo se declara qué directorios revisar.
+# Checks resultantes (marcarlos como requeridos en la protección de rama):
+# "ci / backend" y "ci / frontend". Si se cambia el id del job `ci`, cambian los nombres.
+# Para cambiar los directorios: editar los inputs o volver a correr `copier update`
+# respondiendo otras rutas.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: solbeet/workflows/.github/workflows/python-react.yml@v1
+    with:
+      backend-dir: "backend"
+      # Vacío = sin frontend: el job `frontend` se saltea. Se pasa siempre porque el
+      # default del workflow reutilizable es "frontend".
+      frontend-dir: "frontend"

@@ -1,0 +1,48 @@
+name: Necesidad
+description: Algo que el producto tiene que hacer y hoy no hace (o hace mal).
+title: "[Necesidad] "
+labels: ["necesidad"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Problema
+      description: Qué pasa hoy, a quién le pasa y cuánto cuesta no resolverlo.
+    validations:
+      required: true
+  - type: textarea
+    id: resultado
+    attributes:
+      label: Resultado esperado
+      description: Qué tiene que poder hacer el usuario cuando esté resuelto. Sin proponer la solución técnica.
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Lista verificable. Cada criterio se convierte en al menos un test.
+      placeholder: |
+        - Dado ..., cuando ..., entonces ...
+    validations:
+      required: true
+  - type: textarea
+    id: fuera
+    attributes:
+      label: Fuera de alcance
+      description: Qué NO se va a hacer en este issue.
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      options:
+        - Alta
+        - Media
+        - Baja
+    validations:
+      required: true
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto y evidencia
+      description: Capturas, mensajes, datos. Sin secretos ni datos personales.

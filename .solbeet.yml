@@ -1,0 +1,12 @@
+# Configuración que lee el plugin de Solbeet (solbeet-plugin, scripts/solbeet_gh.py).
+# Solo claves planas `clave: valor`: el plugin no usa un parser YAML completo.
+# - repo: a qué repo de GitHub apuntan las skills.
+# - product_owner / dev_responsable: usuarios de GitHub. El plugin compara el usuario
+#   de la sesión (`gh api user`) con estos valores para saber su rol.
+# No poner `rol:` acá: este archivo es compartido por todo el equipo; `rol:` es para
+# el `.solbeet.yml` personal de una carpeta de trabajo sin clon.
+# Si cambian las personas: `copier update --defaults --data product_owner=... --data dev_responsable=...`
+# o editar acá y en AGENTS.md ("Roles y quién decide") en el mismo PR.
+repo: solbeet-pruebas/app-prueba
+product_owner: "solbeet-hub"
+dev_responsable: "santiago6124"

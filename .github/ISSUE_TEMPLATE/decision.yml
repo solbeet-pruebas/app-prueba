@@ -1,0 +1,52 @@
+name: Decisión
+description: Una decisión técnica o de producto que necesita criterio humano antes de avanzar.
+title: "[Decisión] "
+labels: ["decision"]
+body:
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto
+      description: Qué está pasando y por qué hay que decidir ahora.
+    validations:
+      required: true
+  - type: textarea
+    id: opciones
+    attributes:
+      label: Opciones
+      description: Al menos dos, con costo, riesgo y reversibilidad de cada una.
+      placeholder: |
+        A) ... — costo: ... — riesgo: ... — reversible: sí/no
+        B) ...
+    validations:
+      required: true
+  - type: textarea
+    id: recomendacion
+    attributes:
+      label: Recomendación
+      description: Qué opción se recomienda y por qué.
+    validations:
+      required: true
+  - type: dropdown
+    id: decide
+    attributes:
+      label: Quién decide
+      # El plugin de Solbeet lee esta sección para mostrar la decisión en los
+      # pendientes del rol que corresponde: no cambiar el título ni las opciones.
+      description: Rol que decide (ver "Roles y quién decide" en AGENTS.md).
+      options:
+        - Product owner
+        - Dev responsable
+        - Ambos
+    validations:
+      required: true
+  - type: input
+    id: fecha
+    attributes:
+      label: Fecha límite
+      description: Hasta cuándo se puede esperar sin bloquear trabajo.
+  - type: textarea
+    id: resultado
+    attributes:
+      label: Decisión tomada
+      description: Se completa al decidir. Si es una decisión de arquitectura, crear el ADR en docs/decisiones/.

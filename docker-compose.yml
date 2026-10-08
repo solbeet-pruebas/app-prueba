@@ -1,0 +1,55 @@
+# Entorno local completo: postgres + migraciones + api + web.
+# Uso: `docker compose up --build`. Credenciales solo para desarrollo local.
+# Las migraciones corren en un servicio aparte (`migrate`) que termina antes de que
+# arranque la api: la app nunca migra sola al iniciar (ver docs/decisiones/0003-migraciones-explicitas.md).
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://app:app@db:5432/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://app:app@db:5432/app
+      ENVIRONMENT: local
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build: ./frontend
+    ports:
+      - "8080:8080"
+    volumes:
+      # Agrega el proxy /api -> api:8000 que en producción hace el ingress.
+      - ./deploy/local/web-proxy.conf:/etc/nginx/conf.d/extra/api-proxy.conf:ro
+    depends_on:
+      - api
+
+volumes:
+  db-data:

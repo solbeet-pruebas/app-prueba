@@ -1,0 +1,15 @@
+# Archivo generado por Copier. No editar a mano: lo usa `copier update`.
+_commit: v0.1.2
+_src_path: https://github.com/solbeet/solbeet-template.git
+author_name: Solbeet
+description: Repo de prueba del entorno Solbeet (no es un producto)
+dev_responsable: santiago6124
+github_org: solbeet-pruebas
+github_repo: solbeet-pruebas/app-prueba
+include_frontend: true
+modo: proyecto_nuevo
+product_owner: solbeet-hub
+project_name: App de prueba
+project_slug: app-prueba
+python_version: '3.12'
+use_sentry: false

@@ -1,0 +1,62 @@
+# Contrato de deploy: describe qué necesita este proyecto para correr en cualquier
+# plataforma. Lo consumen el chart de Helm y el bootstrap de VPS de la fábrica.
+# El esquema está documentado en deploy/README.md. Solo nombres de variables, nunca valores.
+schema_version: 1
+project: app-prueba
+
+services:
+  api:
+    image: ghcr.io/solbeet-pruebas/app-prueba-api
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    port: 8000
+    health:
+      liveness: /healthz
+      readiness: /readyz
+    route:
+      path_prefix: /api
+    migrate:
+      command: ["alembic", "upgrade", "head"]
+    env:
+      - name: DATABASE_URL
+        required: true
+        secret: true
+      - name: ENVIRONMENT
+        required: false
+        secret: false
+      - name: LOG_LEVEL
+        required: false
+        secret: false
+      # Lista JSON, p. ej. '["https://app.ejemplo.com"]'; un valor plano hace fallar el
+      # arranque. Con api y web en el mismo host no hace falta.
+      - name: CORS_ORIGINS
+        required: false
+        secret: false
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        required: false
+        secret: false
+      - name: OTEL_SERVICE_NAME
+        required: false
+        secret: false
+
+  web:
+    image: ghcr.io/solbeet-pruebas/app-prueba-web
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    port: 8080
+    health:
+      liveness: /healthz
+      readiness: /healthz
+    route:
+      path_prefix: /
+    env: []
+
+database:
+  engine: postgres
+  version: "17"
+  # Variable donde la plataforma inyecta la URL de conexión (formato SQLAlchemy).
+  url_env: DATABASE_URL
+  url_scheme: postgresql+psycopg
+  backup: true

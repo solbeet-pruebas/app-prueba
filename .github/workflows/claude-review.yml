@@ -1,0 +1,22 @@
+# Revisión automática de PRs por un agente. La lógica vive en el workflow reutilizable
+# de la fábrica (solbeet/workflows); los secretos se heredan del repo u
+# organización (ANTHROPIC_API_KEY o CLAUDE_CODE_OAUTH_TOKEN). Sin secretos, el job
+# avisa y termina sin revisar.
+# Check resultante: "claude-review / review". Es informativo: NO marcarlo como requerido.
+name: claude-review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# El workflow llamado no puede tener más permisos que los que da este. Son los que
+# pide el job `review` del reutilizable; no ampliar sin motivo.
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+
+jobs:
+  claude-review:
+    uses: solbeet/workflows/.github/workflows/claude-review.yml@v1
+    secrets: inherit

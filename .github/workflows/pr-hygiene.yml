@@ -1,0 +1,18 @@
+# Higiene de PR: secciones obligatorias del cuerpo ("## Qué cambia y por qué" y
+# "## Evidencia", las de .github/pull_request_template.md), aviso por diff grande,
+# archivos .rej, marcadores de conflicto y escaneo de secretos con gitleaks.
+# La lógica vive en el workflow reutilizable de la fábrica (solbeet/workflows).
+# Checks resultantes (requeridos): "pr-hygiene / hygiene" y "pr-hygiene / secret-scan".
+name: pr-hygiene
+
+on:
+  pull_request:
+    # "edited" vuelve a correr el control cuando se corrige el cuerpo del PR.
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-hygiene:
+    uses: solbeet/workflows/.github/workflows/pr-hygiene.yml@v1
