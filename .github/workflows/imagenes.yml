@@ -1,0 +1,46 @@
+# Publica las imágenes del api y del web en ghcr.io/solbeet-pruebas con el tag
+# `sha-<sha7>` (y la versión sin "v" si el disparo es un tag semver). La lógica
+# vive en el workflow reutilizable de la fábrica (solbeet/workflows, imagen.yml).
+# En los PR solo construye, para probar los Dockerfiles sin publicar.
+# Las imágenes publicadas las despliega el repo GitOps de prueba
+# (solbeet-pruebas/app-prueba-gitops) en staging y producción.
+name: imagenes
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - backend/**
+      - frontend/**
+      - .github/workflows/imagenes.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: imagenes-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    uses: solbeet/workflows/.github/workflows/imagen.yml@v1
+    permissions:
+      contents: read
+      packages: write
+    with:
+      imagen: app-prueba-api
+      contexto: backend
+      publicar: ${{ github.event_name != 'pull_request' }}
+
+  web:
+    uses: solbeet/workflows/.github/workflows/imagen.yml@v1
+    permissions:
+      contents: read
+      packages: write
+    with:
+      imagen: app-prueba-web
+      contexto: frontend
+      publicar: ${{ github.event_name != 'pull_request' }}
