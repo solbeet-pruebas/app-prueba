@@ -59,6 +59,8 @@ docker compose down                   # agregar -v para borrar también los dato
 3. PR con ese cambio; tras el merge, una persona crea el tag `vX.Y.Z` en `main`.
 4. El pipeline construye las imágenes de `deploy/contract.yaml` con ese tag; la plataforma corre la migración y despliega.
 
+Imágenes: `.github/workflows/imagenes.yml` publica `ghcr.io/solbeet-pruebas/app-prueba-api` y `app-prueba-web` con el tag `sha-<sha7>` en cada push a `main` (y `X.Y.Z` con cada tag `vX.Y.Z`), para `linux/amd64` y `linux/arm64`. En los PR solo construye. Nunca hay `latest`: el repo GitOps de prueba (`solbeet-pruebas/app-prueba-gitops`) fija el tag en cada ambiente.
+
 ## Traer mejoras de la plantilla
 
 ```bash
