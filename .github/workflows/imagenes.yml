@@ -20,9 +20,11 @@ on:
 permissions:
   contents: read
 
+# En PR se cancela la corrida vieja; en main nunca: cada commit de main tiene que
+# terminar con su imagen sha-<sha7>, porque el GitOps fija los tags por sha.
 concurrency:
-  group: imagenes-${{ github.ref }}
-  cancel-in-progress: true
+  group: imagenes-${{ github.ref }}-${{ github.event_name == 'pull_request' && 'pr' || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   api:
