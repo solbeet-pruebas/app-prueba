@@ -21,6 +21,9 @@ def _get_or_404(session: SessionDep, item_id: int) -> Item:
 @router.get("", response_model=list[ItemRead])
 def list_items(session: SessionDep, limit: int = 100, offset: int = 0) -> list[Item]:
     """Lista items ordenados por id. `limit` se acota a 500 para no traer tablas enteras."""
+    # Rama descartable de la prueba F1.6: deploy deliberadamente roto (readiness sana,
+    # listado en 500) para probar la vuelta atrás automática de solbeet-run. No mergear.
+    raise HTTPException(status_code=500, detail="roto a propósito (prueba F1.6)")
     stmt = select(Item).order_by(Item.id).limit(min(limit, 500)).offset(offset)
     return list(session.scalars(stmt))
 
