@@ -1,6 +1,6 @@
 # Estado · App de prueba
 
-Última actualización: 2026-10-08 (generado por solbeet-template; actualizar al cerrar cada trabajo).
+Última actualización: 2026-10-09.
 
 ## Qué funciona y cómo se verificó
 
@@ -13,6 +13,7 @@ Al generarse, la plantilla se verifica con estos comandos (todos en verde):
 | Backend tests | `cd backend && uv run pytest` | todos pasan (SQLite en memoria) |
 | Frontend | `cd frontend && npm ci && npm run lint && npm run typecheck && npm test && npm run build` | todo en verde |
 | Imágenes | `docker compose build` | build exitoso |
+| Imágenes publicadas | workflow `imagenes` (push a `main`) | `ghcr.io/solbeet-pruebas/app-prueba-{api,web}:sha-<sha7>` |
 
 Repetir estos comandos tras el primer clon para confirmar que el entorno local está bien.
 
