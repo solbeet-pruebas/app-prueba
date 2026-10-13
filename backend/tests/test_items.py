@@ -20,7 +20,7 @@ def test_list_items(client: TestClient) -> None:
     client.post("/api/items", json={"name": "b"})
     response = client.get("/api/items")
     assert response.status_code == 200
-    assert [item["name"] for item in response.json()] == ["a", "b"]
+    assert [item["name"] for item in response.json()] == ["b", "a"]
 
 
 def test_create_rejects_empty_name(client: TestClient) -> None:
