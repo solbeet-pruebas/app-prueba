@@ -1,0 +1,30 @@
+# Prueba de V1–V3 (solbeet/workflows#12, #13, #14) apuntando a la rama de V3,
+# que contiene las tres. No mergear: es una rama de prueba.
+name: verificacion
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+  actions: read
+
+jobs:
+  gates:
+    name: solbeet
+    uses: solbeet/workflows/.github/workflows/gates.yml@feat/v3-rojo-verde
+    with:
+      backend-dir: backend
+      contract-app: app.main:create_app
+      contract-factory: true
+  guardia:
+    name: solbeet
+    uses: solbeet/workflows/.github/workflows/guardia-tests.yml@feat/v3-rojo-verde
+  rojo-verde:
+    name: solbeet
+    uses: solbeet/workflows/.github/workflows/rojo-verde.yml@feat/v3-rojo-verde
+    with:
+      backend-dir: backend
