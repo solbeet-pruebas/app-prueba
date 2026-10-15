@@ -60,3 +60,27 @@ database:
   url_env: DATABASE_URL
   url_scheme: postgresql+psycopg
   backup: true
+
+# Verificación post-deploy: chequeos que Run corre contra la URL pública del
+# ambiente (staging o producción) después de cada deploy. Si alguno falla, el
+# deploy no se da por verificado. Esquema en deploy/README.md (campo `smoke`).
+smoke:
+  timeout_seconds: 10
+  checks:
+    - name: readyz
+      http:
+        path: /readyz
+        expect:
+          status: 200
+          body_contains: '"status":"ok"'
+    - name: api-items
+      http:
+        path: /api/items
+        expect:
+          status: 200
+    - name: web
+      http:
+        path: /
+        expect:
+          status: 200
+          body_contains: '<div id="root">'
