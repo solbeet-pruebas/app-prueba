@@ -14,6 +14,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine
 
+from app.api.canario import router as canario_router
 from app.api.health import router as health_router
 from app.api.version import router as version_router
 from app.config import Settings, get_settings
@@ -82,5 +83,6 @@ def create_app(settings: Settings | None = None, engine: Engine | None = None) -
     app.include_router(health_router)
     app.include_router(items_router)
     app.include_router(version_router)
+    app.include_router(canario_router)
     init_otel(app, settings)
     return app
