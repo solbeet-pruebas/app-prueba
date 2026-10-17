@@ -1,6 +1,15 @@
 # Estado · App de prueba
 
-Última actualización: 2026-10-09.
+Última actualización: 2026-10-16.
+
+## Autoprueba por cambio (2026-10-16)
+
+Pruebas de aceptación en `backend/tests/aceptacion/` + workflow `solbeet-run-verificacion.yml`.
+Verificado en local: `ruff`, `pyright` y `pytest` (16 tests, 3 de aceptación en proceso); las 3 contra un
+servidor `uvicorn` real con `ACEPTACION_BASE_URL` (pasan, y el listado de items queda vacío después);
+contra un servidor sin `/api/version`, CA-1-1 falla con 404 (rojo). **No verificado:** el workflow en
+GitHub Actions ni el disparo desde Run contra staging real (requiere `verificacion.e2e: true` en el
+GitOps y `actions: write` de la App).
 
 ## Qué funciona y cómo se verificó
 

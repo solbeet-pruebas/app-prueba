@@ -6,6 +6,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado
 
 ### Agregado
 
+- Autoprueba por cambio: workflow `solbeet-run-verificacion.yml` y `.github/scripts/armar_resultado.py` (de solbeet-template, ADR 0007) y pruebas de aceptación reales en `backend/tests/aceptacion/` para `GET /api/version` (CA-1-1), el listado de `/api/items` (CA-1-2) y crear, leer y borrar un item (CA-1-3, con prefijo `aceptacion-` y borrado garantizado). Corren en el CI dentro del proceso y, con `ACEPTACION_BASE_URL`, contra staging y producción cuando Solbeet Run las dispara. Para que Run las use hay que declarar `verificacion.e2e: true` en `.solbeet/ambientes.yaml` del GitOps.
 - `GET /api/version`: responde `{"version": "<versión>"}` leída de `backend/pyproject.toml`, sin tocar la base (#1). La imagen del backend ahora copia `pyproject.toml` a `/app`.
 - Contrato de deploy: campo `smoke` (`/readyz`, `/api/items`, `/`) que corre Run después de cada deploy contra la URL del ambiente; esquema traído de solbeet-template (`deploy/README.md`).
 - Workflow `imagenes`: publica las imágenes del api y del web en ghcr.io con el tag `sha-<sha7>` en cada push a `main` (en los PR solo construye).
