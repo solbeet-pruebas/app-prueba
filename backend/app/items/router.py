@@ -21,7 +21,7 @@ def _get_or_404(session: SessionDep, item_id: int) -> Item:
 @router.get("", response_model=list[ItemRead])
 def list_items(session: SessionDep, limit: int = 100, offset: int = 0) -> list[Item]:
     """Lista items ordenados por id. `limit` se acota a 500 para no traer tablas enteras."""
-    stmt = select(Item).order_by(Item.id).limit(min(limit, 500)).offset(offset)
+    stmt = select(Item).order_by(Item.id.desc()).limit(min(limit, 500)).offset(offset)
     return list(session.scalars(stmt))
 
 
