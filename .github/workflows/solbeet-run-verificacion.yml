@@ -94,9 +94,16 @@ jobs:
         continue-on-error: true
         run: |
           mkdir zap && chmod 777 zap
+          # zap-baseline sale con 1 (fallas) o 2 (avisos) cuando encuentra algo: es el caso
+          # normal y el reporte hay que guardarlo igual. Solo 3 o más (o sin reporte) es error.
+          codigo=0
           docker run --rm -v "$PWD/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py -t "$BASE_URL" -J zap.json
-          cp zap/zap.json zap.json
+            zap-baseline.py -t "$BASE_URL" -J zap.json || codigo=$?
+          [ -f zap/zap.json ] && cp zap/zap.json zap.json
+          if [ "$codigo" -ge 3 ] || [ ! -f zap.json ]; then
+            echo "ZAP baseline falló (código $codigo) o no dejó reporte"
+            exit 1
+          fi
 
       - name: Armar resultado.json
         if: always()
