@@ -68,3 +68,12 @@ def delete_item(item_id: int, session: SessionDep) -> None:
     item = _get_or_404(session, item_id)
     session.delete(item)
     session.commit()
+
+
+def descuento(precio: int, porcentaje: int) -> int:
+    """Precio con descuento. Prueba de V1: función nueva sin test (debe dar rojo)."""
+    if porcentaje <= 0:
+        return precio
+    if porcentaje >= 100:
+        return 0
+    return precio - precio * porcentaje // 100
