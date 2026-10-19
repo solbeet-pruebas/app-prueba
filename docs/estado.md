@@ -1,6 +1,18 @@
 # Estado · App de prueba
 
-Última actualización: 2026-10-16.
+Última actualización: 2026-10-19.
+
+## Reglas del agente lector (2026-10-19, sin desplegar)
+
+`.solbeet/lector.yaml` con dos consultas numéricas sobre `items` y `items.description` como
+sensible. Probado en local contra Postgres 17.6 con las migraciones de esta app, el usuario
+`solbeet_lector` y el script de vistas del chart `app` de solbeet-bootstrap, corriendo el trabajo
+`lector` del runner de solbeet-run (solbeet/solbeet-run#89): con dos items no avisa; con 63 items
+en la última hora y uno sin nombre avisa las dos (confianza media y alta); `items.description`
+enmascarada, sin escritura ni lectura directa. **No verificado** en el servidor de prueba: falta
+el usuario de lectura en el GitOps (`readonlyRole`, con `sensitiveColumns: [items.description]`),
+la URL en el runner de B y `lector` prendido en la plataforma (pasos en `docs/estado.md` de
+solbeet-run).
 
 ## Autoprueba por cambio (2026-10-16)
 
