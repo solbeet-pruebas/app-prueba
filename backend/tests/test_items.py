@@ -1,6 +1,37 @@
 """Tests del CRUD de ejemplo `items`."""
 
+import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import Engine
+
+from app.config import Settings
+from app.main import create_app
+
+
+def _client_con_entorno(environment: str, engine: Engine) -> TestClient:
+    settings = Settings(
+        _env_file=None,  # pyright: ignore[reportCallIssue]
+        database_url="sqlite://",
+        otel_exporter_otlp_endpoint=None,
+        environment=environment,
+    )
+    return TestClient(create_app(settings, engine=engine))
+
+
+def test_listar_items_responde_500_solo_en_staging(engine: Engine) -> None:
+    """Falla deliberada (issue #21): en staging el listado responde 500."""
+    with _client_con_entorno("staging", engine) as client:
+        response = client.get("/api/items")
+    assert response.status_code == 500
+    assert response.json() == {"detail": "prueba deliberada: falla solo en staging"}
+
+
+@pytest.mark.parametrize("environment", ["development", "production"])
+def test_listar_items_responde_200_fuera_de_staging(environment: str, engine: Engine) -> None:
+    with _client_con_entorno(environment, engine) as client:
+        response = client.get("/api/items")
+    assert response.status_code == 200
+    assert response.json() == []
 
 
 def test_create_and_get_item(client: TestClient) -> None:

@@ -1,6 +1,6 @@
 """CRUD de ejemplo. Copiar este módulo como patrón para recursos nuevos."""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 
 from app.db import SessionDep
@@ -19,8 +19,18 @@ def _get_or_404(session: SessionDep, item_id: int) -> Item:
 
 
 @router.get("", response_model=list[ItemRead])
-def list_items(session: SessionDep, limit: int = 100, offset: int = 0) -> list[Item]:
-    """Lista items ordenados por id. `limit` se acota a 500 para no traer tablas enteras."""
+def list_items(
+    request: Request, session: SessionDep, limit: int = 100, offset: int = 0
+) -> list[Item]:
+    """Lista items ordenados por id. `limit` se acota a 500 para no traer tablas enteras.
+
+    Falla deliberada (issue #21, prueba de autoprueba/rollback): en staging responde 500.
+    """
+    if request.app.state.settings.environment == "staging":
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="prueba deliberada: falla solo en staging",
+        )
     stmt = select(Item).order_by(Item.id).limit(min(limit, 500)).offset(offset)
     return list(session.scalars(stmt))
 
