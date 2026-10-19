@@ -1,0 +1,18 @@
+# Prueba de los gates de V1 (solbeet/workflows#8) apuntando a la rama del PR.
+# No mergear: es una rama de prueba.
+name: verificacion
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: solbeet
+    uses: solbeet/workflows/.github/workflows/gates.yml@feat/v1-gates
+    with:
+      backend-dir: backend
+      contract-app: app.main:create_app
+      contract-factory: true
