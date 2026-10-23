@@ -1,0 +1,21 @@
+# Reglas del agente lector de Solbeet (V21): lo que solbeet-run mira de la base de esta app
+# con un usuario de solo lectura, cada 15 minutos, en staging y producción. Cada consulta
+# devuelve UN número; si devuelve filas o texto, Run la descarta. El agente solo avisa:
+# nunca escribe, ni abre PRs, ni revierte. Formato: docs/loops/lector.md de solbeet-run.
+schema: 1
+sensibles:
+  # Texto libre que puede traer datos personales: el usuario de lectura lo ve enmascarado.
+  # Tiene que coincidir con readonlyRole.sensitiveColumns del chart en el repo GitOps.
+  columnas: [items.description]
+  tablas: []
+base:
+  - nombre: items_creados_ultima_hora
+    descripcion: Items creados en la última hora
+    sql: SELECT count(*) FROM items WHERE created_at > now() - interval '1 hour'
+    maximo: 50
+    si_falla: Algo está creando items de más (un script o un reintento en bucle).
+  - nombre: items_sin_nombre
+    descripcion: Items con el nombre vacío
+    sql: SELECT count(*) FROM items WHERE btrim(name) = ''
+    maximo: 0
+    si_falla: La API dejó pasar un item sin nombre; la validación del alta no está andando.
