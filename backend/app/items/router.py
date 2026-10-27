@@ -1,6 +1,6 @@
 """CRUD de ejemplo. Copiar este módulo como patrón para recursos nuevos."""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
 
 from app.db import SessionDep
@@ -26,9 +26,15 @@ def list_items(session: SessionDep, limit: int = 100, offset: int = 0) -> list[I
 
 
 @router.post("", response_model=ItemRead, status_code=status.HTTP_201_CREATED)
-def create_item(payload: ItemCreate, session: SessionDep) -> Item:
-    """Crea un item y lo devuelve con su id."""
-    item = Item(**payload.model_dump())
+def create_item(payload: ItemCreate, request: Request, session: SessionDep) -> Item:
+    """Crea un item y lo devuelve con su id.
+
+    Defecto sembrado (prueba de explorar, V16.2): en staging descarta la descripción.
+    """
+    datos = payload.model_dump()
+    if request.app.state.settings.environment == "staging":
+        datos["description"] = None
+    item = Item(**datos)
     session.add(item)
     session.commit()
     session.refresh(item)
