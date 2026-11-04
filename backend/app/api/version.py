@@ -1,20 +1,28 @@
-"""GET /api/version: nombre y entorno de la app (prueba de V1, contraprueba en verde)."""
+"""GET /api/version: la versión de la app, leída de `pyproject.toml`.
 
-from fastapi import APIRouter, Request
-from pydantic import BaseModel
+No toca la base ni requiere autenticación. La versión no se repite a mano en otro lugar:
+se lee del `pyproject.toml` que viaja junto al código (en la imagen, en `/app`).
+"""
+
+import tomllib
+from functools import lru_cache
+from pathlib import Path
+
+from fastapi import APIRouter
 
 router = APIRouter(prefix="/api", tags=["version"])
 
-
-class VersionRead(BaseModel):
-    """Respuesta de GET /api/version."""
-
-    app: str
-    environment: str
+PYPROJECT = Path(__file__).resolve().parents[2] / "pyproject.toml"
 
 
-@router.get("/version", response_model=VersionRead)
-def version(request: Request) -> VersionRead:
-    """Devuelve el nombre y el entorno configurados."""
-    settings = request.app.state.settings
-    return VersionRead(app=settings.app_name, environment=settings.environment)
+@lru_cache
+def leer_version() -> str:
+    """Versión declarada en `[project]` de `pyproject.toml` (se lee una sola vez)."""
+    datos = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))
+    return str(datos["project"]["version"])
+
+
+@router.get("/version")
+def version() -> dict[str, str]:
+    """Versión de la app que está respondiendo."""
+    return {"version": leer_version()}
