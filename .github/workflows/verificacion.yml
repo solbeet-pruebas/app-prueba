@@ -1,11 +1,33 @@
-# Prueba de V1–V3 (solbeet/workflows#12, #13, #14) apuntando a la rama de V3,
-# que contiene las tres. No mergear: es una rama de prueba.
+# Verificación sobre el diff del PR (fase V de la fábrica): que «checks en verde»
+# signifique algo antes de mergear sin una persona adelante. La lógica vive en los
+# workflows reutilizables de solbeet/workflows; acá solo se declara qué revisar.
+# Es el mismo caller que genera solbeet-template (template/.github/workflows/verificacion.yml.jinja,
+# modo proyecto_nuevo, runners de GitHub).
+#
+# En este repo de prueba, además, lo usan los PRs trampa (#9 a #17, abiertos a propósito y
+# nunca mergeados): el banco de controles de Solbeet Run (solbeet/solbeet-run#143) los vuelve a
+# correr cada noche contra la versión publicada (@v1) para ver que cada gate siga frenando.
+#
+# Checks resultantes (candidatos a requeridos para el merge automático):
+#   solbeet / cobertura-cambio  las líneas que cambia el PR están cubiertas por tests (80%)
+#   solbeet / migraciones       las migraciones aplican, bajan y coinciden con los modelos;
+#                               las nuevas no borran ni renombran nada existente
+#   solbeet / contrato          la API responde lo que declara su OpenAPI (Schemathesis)
+#   solbeet / dependencias      el PR no agrega dependencias con vulnerabilidades altas
+#   solbeet / tests             el PR no borra, debilita ni saltea tests existentes
+#                               (salvo label tests-con-dale puesto por otra persona)
+#   solbeet / rojo-verde        cada test nuevo falla sin el cambio y pasa con él
+# Todos frenan solo lo que introduce el PR: lo que ya fallaba en la rama base se
+# informa como aviso, así sirven también en código heredado sin tests.
 name: verificacion
 
 on:
   pull_request:
+    # labeled/unlabeled: poner o sacar un label vuelve a evaluar (el tests-con-dale, o el que
+    # usa el banco para disparar una corrida nueva sin push).
     types: [opened, synchronize, reopened, labeled, unlabeled]
 
+# Los reutilizables leen los eventos del PR y las corridas del commit; no escriben nada.
 permissions:
   contents: read
   pull-requests: read
@@ -15,16 +37,22 @@ permissions:
 jobs:
   gates:
     name: solbeet
-    uses: solbeet/workflows/.github/workflows/gates.yml@feat/v3-rojo-verde
+    uses: solbeet/workflows/.github/workflows/gates.yml@v1
     with:
-      backend-dir: backend
-      contract-app: app.main:create_app
+      # Dónde corre: runners de GitHub (el repo es público, no se cobran).
+      runner: ubuntu-latest
+      backend-dir: "backend"
+      # App que Schemathesis levanta (con Postgres de prueba) para probar el contrato.
+      contract-app: "app.main:create_app"
       contract-factory: true
   guardia:
     name: solbeet
-    uses: solbeet/workflows/.github/workflows/guardia-tests.yml@feat/v3-rojo-verde
+    uses: solbeet/workflows/.github/workflows/guardia-tests.yml@v1
+    with:
+      runner: ubuntu-latest
   rojo-verde:
     name: solbeet
-    uses: solbeet/workflows/.github/workflows/rojo-verde.yml@feat/v3-rojo-verde
+    uses: solbeet/workflows/.github/workflows/rojo-verde.yml@v1
     with:
-      backend-dir: backend
+      runner: ubuntu-latest
+      backend-dir: "backend"
