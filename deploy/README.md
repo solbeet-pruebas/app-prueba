@@ -32,15 +32,46 @@ migración, actualizá el contrato **en el mismo PR**.
 | `database.url_env` | string | sí | Variable donde se inyecta la URL de conexión. |
 | `database.url_scheme` | string | sí | Esquema de la URL que espera la app (`postgresql+psycopg`). |
 | `database.backup` | bool | sí | Si es `true`, la plataforma debe programar backups y probar restauraciones. |
+| `smoke` | mapa | no | Verificación post-deploy (ver abajo). Ausente = solo se verifica la readiness. |
+| `smoke.timeout_seconds` | entero | no | Tiempo máximo de cada chequeo, en segundos. Default `10`. |
+| `smoke.checks` | lista | sí (si hay `smoke`) | Chequeos, en orden. Cada uno tiene `name` y **exactamente uno** de `http` o `command`. |
+| `smoke.checks[].name` | string | sí | Identificador único (minúsculas, números, guiones). Aparece en el resultado de la verificación. |
+| `smoke.checks[].http.method` | string | no | `GET` (default) o `HEAD`. Los chequeos no deben cambiar datos. |
+| `smoke.checks[].http.path` | string | sí | Ruta que empieza con `/`, relativa a la URL pública del ambiente. |
+| `smoke.checks[].http.expect.status` | entero | no | Código HTTP esperado. Default `200`. No se siguen redirecciones. |
+| `smoke.checks[].http.expect.body_contains` | string | no | Texto que tiene que aparecer en el cuerpo de la respuesta. |
+| `smoke.checks[].command` | lista de strings | sí (si no hay `http`) | Comando que se corre con la imagen de `service` de la versión recién desplegada. Recibe `SMOKE_BASE_URL` (URL pública del ambiente, sin barra final). Pasa si sale con código 0. |
+| `smoke.checks[].service` | string | no | Servicio cuya imagen corre el `command`. Default `api`. |
 
 ## Reglas para quien consume el contrato
 
 - Orden de deploy: migración (si existe) → servicios. La app **no** migra al arrancar.
 - `readiness` decide si entra tráfico; `liveness` decide si se reinicia el contenedor.
   No usar `readiness` como liveness: una caída de la base reiniciaría todo en bucle.
-- Las rutas de salud no se exponen por el ingress público (no están bajo `path_prefix`
-  salvo el `/` del frontend); se consultan dentro del cluster o del host.
+- Las rutas de salud no están bajo `path_prefix`. La única que se publica por el ingress
+  es la `readiness` del api, como ruta exacta (en el chart: `ingress.apiExactPaths: [/readyz]`),
+  para que la verificación post-deploy la consulte por la URL pública. `liveness` no se publica.
 - Los contenedores corren como usuario no root (api uid 10001, web uid 101).
+
+## Verificación post-deploy (`smoke`)
+
+Después de cada deploy a un ambiente, Run (solbeet-run, loop `post-deploy`) corre los
+chequeos de `smoke` del contrato **de la revisión desplegada** contra la URL pública de ese
+ambiente (la del Deployment de GitHub, p. ej. `https://<proyecto>-staging.<dominio>`), además
+de mirar la readiness y los errores durante una ventana. El deploy queda verificado solo si
+pasan todos.
+
+- Un chequeo `http` arma `<URL del ambiente><path>`, hace el pedido sin seguir redirecciones,
+  con `timeout_seconds`, y compara `expect.status` y, si está, `expect.body_contains`.
+- Un chequeo `command` corre una sola vez, con la imagen de `service` y el tag desplegado,
+  sin secretos de la app; solo recibe `SMOKE_BASE_URL`. Sirve para pruebas que un pedido HTTP
+  no alcanza a expresar.
+- Los chequeos tienen que ser de solo lectura y rápidos: corren en producción en cada deploy.
+- Quien consume decide reintentos y ventana; el contrato solo dice qué tiene que dar bien.
+
+La plantilla trae un smoke mínimo: readiness del api (`/readyz` con `"status":"ok"`), el
+listado de `items` (`/api/items`, pasa por el ingress y la base) y, con frontend, que `/`
+devuelva el HTML de la SPA. Al reemplazar `items` por el recurso real, cambiar ese chequeo.
 
 ## Cambios de esquema
 
