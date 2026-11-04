@@ -1,0 +1,124 @@
+# Autoprueba por cambio: lo que se mergea se prueba solo en los ambientes reales.
+#
+# Lo dispara Solbeet Run (workflow_dispatch, con la GitHub App) cada vez que un cambio llega a
+# un ambiente que declara `verificacion.e2e: true` en `.solbeet/ambientes.yaml` del repo GitOps:
+# primero en staging y, después del deploy, también en producción. Corre las pruebas de
+# aceptación del repo contra la URL que le pasa Run y deja `resultado.json` como artefacto
+# (`solbeet-verificacion-<run_id>`); el veredicto lo da Run con reglas, no este workflow.
+#
+# Qué corre (lo que no exista se informa como `ausente`, que Run NO toma como verde):
+#   - pytest sobre `backend/tests/aceptacion/` con ACEPTACION_BASE_URL (las escribe `construir`,
+#     una por criterio del issue, sin secretos);
+#   - Playwright sobre `e2e/tests/aceptacion/` con E2E_BASE_URL, si el repo tiene `e2e/`;
+#   - ZAP baseline (pasivo) contra la URL, solo si el ambiente declara `verificacion.zap: true`.
+#
+# Reglas del contrato con Run (docs/workflow-verificacion-staging.md de solbeet-run):
+#   - Termina SIEMPRE en `success` si llegó a escribir el resultado: los pasos de pruebas
+#     llevan `continue-on-error`. Una conclusión distinta es «sin evidencia», no un e2e rojo.
+#   - `run-name` lleva el run_id: así Run encuentra la ejecución.
+#   - Sin secretos, sin escritura: `contents: read`. Contra producción las pruebas tienen que
+#     ser inocuas (leer, o crear y borrar lo que crean).
+name: solbeet-run-verificacion
+run-name: solbeet-run ${{ inputs.run_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id: {required: true, type: string}
+      ref: {required: true, type: string}
+      base_url: {required: true, type: string}
+      e2e: {required: true, type: string}
+      zap: {required: true, type: string}
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    name: verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BACKEND_DIR: "backend"
+      # Los inputs llegan por el entorno y no por ${{ }} dentro de `run:` (texto de otro).
+      BASE_URL: ${{ inputs.base_url }}
+      REF: ${{ inputs.ref }}
+      E2E: ${{ inputs.e2e }}
+      ZAP: ${{ inputs.zap }}
+    steps:
+      - name: Checkout del commit desplegado
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Instalar uv
+        if: inputs.e2e == 'true'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Pruebas de aceptación (pytest contra la URL)
+        if: inputs.e2e == 'true'
+        continue-on-error: true
+        env:
+          ACEPTACION_BASE_URL: ${{ inputs.base_url }}
+        run: |
+          if [ ! -d "$BACKEND_DIR/tests/aceptacion" ]; then
+            echo "No hay $BACKEND_DIR/tests/aceptacion: sin pruebas de aceptación de pytest."
+            exit 0
+          fi
+          cd "$BACKEND_DIR"
+          uv sync --locked
+          uv run pytest tests/aceptacion -o addopts="" -p no:cacheprovider \
+            --junitxml="$GITHUB_WORKSPACE/aceptacion.xml"
+
+      - name: Instalar Node.js
+        if: inputs.e2e == 'true' && hashFiles('e2e/package.json') != ''
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      - name: e2e de aceptación (Playwright contra la URL)
+        if: inputs.e2e == 'true' && hashFiles('e2e/package.json') != ''
+        continue-on-error: true
+        working-directory: e2e
+        env:
+          E2E_BASE_URL: ${{ inputs.base_url }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ github.workspace }}/e2e.json
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps --only-shell chromium
+          npx playwright test tests/aceptacion --reporter=json
+
+      - name: ZAP baseline (pasivo, solo contra la URL del input)
+        if: inputs.zap == 'true'
+        continue-on-error: true
+        run: |
+          mkdir zap && chmod 777 zap
+          # zap-baseline sale con 1 (fallas) o 2 (avisos) cuando encuentra algo: es el caso
+          # normal y el reporte hay que guardarlo igual. Solo 3 o más (o sin reporte) es error.
+          codigo=0
+          docker run --rm -v "$PWD/zap:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t "$BASE_URL" -J zap.json || codigo=$?
+          [ -f zap/zap.json ] && cp zap/zap.json zap.json
+          if [ "$codigo" -ge 3 ] || [ ! -f zap.json ]; then
+            echo "ZAP baseline falló (código $codigo) o no dejó reporte"
+            exit 1
+          fi
+
+      - name: Armar resultado.json
+        if: always()
+        run: |
+          python3 .github/scripts/armar_resultado.py \
+            --base-url "$BASE_URL" --ref "$REF" --e2e "$E2E" --zap "$ZAP" \
+            --junit aceptacion.xml --playwright e2e.json --zap-json zap.json \
+            --salida resultado.json
+          cat resultado.json
+
+      - name: Subir el resultado
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: solbeet-verificacion-${{ inputs.run_id }}
+          path: resultado.json
+          if-no-files-found: error
+          retention-days: 14
