@@ -8,7 +8,9 @@ name: pr-hygiene
 on:
   pull_request:
     # "edited" vuelve a correr el control cuando se corrige el cuerpo del PR.
-    types: [opened, synchronize, reopened, edited, ready_for_review]
+    # labeled/unlabeled: poner o sacar un label (el `banco` del banco de controles de Run)
+    # dispara una corrida nueva sin push; mismo criterio que el caller de verificacion.
+    types: [opened, synchronize, reopened, edited, ready_for_review, labeled, unlabeled]
 
 permissions:
   contents: read
