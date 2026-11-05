@@ -20,6 +20,7 @@ dev = [
     "httpx>=0.28",
     "pyright[nodejs]>=1.1.390",
     "pytest>=8.3",
+    "urllib3==1.26.4",
     "ruff>=0.9",
 ]
 
